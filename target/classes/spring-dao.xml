@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd
+http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <context:component-scan base-package="com.ssm">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+
+    <util:properties id="properties" location="classpath:database.properties"/>
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="url" value="#{properties.url}"/>
+        <property name="driverClassName" value="#{properties.driver}" />
+        <property name="username" value="#{properties.username}" />
+        <property name="password" value="#{properties.password}" />
+        <property name="initialSize" value="#{properties.initialSize}" />
+        <property name="maxActive" value="#{properties.maxActive}" />
+    </bean>
+
+    <!-- 配置Mapper扫描 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- 配置接口文件在哪里 -->
+        <property name="basePackage" value="com.ssm.dao" />
+    </bean>
+
+    <!-- 配置SqlSessionFactoryBean -->
+    <bean class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 配置XML文件在哪里 -->
+        <property name="mapperLocations" value="classpath:mappers/*.xml" />
+        <!-- 设置MyBatis核心配置文件 -->
+        <property name="configLocation" value="classpath:mybatis-config.xml" />
+        <!-- 配置使用哪个数据源连接数据库 -->
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+
+    <!--配置spring框架声明式事务-->
+    <!--配置事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+    <aop:config>
+        <aop:pointcut id="po" expression="execution(* com.ssm.service.impl.*.*(..))"/>
+        <aop:advisor advice-ref="txadvice" pointcut-ref="po"></aop:advisor>
+    </aop:config>
+
+    <!--配置事务通知-->
+    <tx:advice id="txadvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <!--所有的都有事务-->
+            <tx:method name="*"/>
+            <!--只要是find开头的都是只读-->
+            <tx:method name="search*" read-only="true"></tx:method>
+        </tx:attributes>
+    </tx:advice>
+    <!--8. 配置事务切入位置，以及aop增强-->
+
+
+
+</beans>
